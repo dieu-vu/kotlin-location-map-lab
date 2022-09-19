@@ -9,20 +9,20 @@ import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 import com.example.w2d3locationmaplab.ui.theme.W2D3LocationMapLabTheme
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationRequest.create
 import com.google.android.gms.location.LocationResult.create
@@ -31,10 +31,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.libraries.places.api.Places
-import com.google.maps.android.compose.CameraPositionState
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.*
 
 
 class MainActivity : ComponentActivity() {
@@ -44,14 +41,33 @@ class MainActivity : ComponentActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        checkPermissions()
+//        checkPermission()
         super.onCreate(savedInstanceState)
         Places.initialize(this, BuildConfig.apiKey)
+        Log.d("GEOLOCATION", "apiKey ${BuildConfig.apiKey}")
+
+
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(this)
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED) {
+
+        Log.i("GEOLOCATION permission", Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) !=
+            PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ),
+                0
+            )
+        } else {
             fusedLocationClient.lastLocation.addOnSuccessListener {
                 Log.d(
                     "GEOLOCATION",
@@ -59,11 +75,16 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-        locationCallback = object: LocationCallback() {
+
+
+        locationCallback = object : LocationCallback() {
             override fun onLocationResult(p0: LocationResult) {
                 p0 ?: return
-                for (location in p0.locations) { Log.d("GEOLOCATION",
-                    "location latitude:${location.latitude} and longitude: ${location.longitude}" )
+                for (location in p0.locations) {
+                    Log.d(
+                        "GEOLOCATION",
+                        "location latitude:${location.latitude} and longitude: ${location.longitude}"
+                    )
                 }
             }
         }
@@ -75,50 +96,54 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    Greeting("Android")
-//                    GoogleMap(
-//                        modifier = Modifier.fillMaxSize(),
-//                        uiSettings = MapUiSettings(zoomControlsEnabled = true),
-//                        cameraPositionState = CameraPositionState(CameraPosition(LatLng(37.42, -122.08),12f,0f,0f))
-//                    ){}
-                    Column(verticalArrangement = Arrangement.Center){
-                        Button(onClick = {
-                            val locationRequest = LocationRequest.create()
-                                .setInterval(1000)
-                                .setPriority(PRIORITY_HIGH_ACCURACY)
-                            fusedLocationClient.requestLocationUpdates(locationRequest,
-                                locationCallback, Looper.getMainLooper())
-                        }){
-                            Text("Start tracking")
-                        }
-                        Button(onClick = {
-                            fusedLocationClient.removeLocationUpdates(locationCallback)
-                        }){
-                            Text("Stop tracking")
-                        }
+                    var mapProperties by remember {
+                        mutableStateOf(
+                            MapProperties(maxZoomPreference = 10f, minZoomPreference = 5f)
+                        )
+                    }
+                    var mapUiSettings by remember {
+                        mutableStateOf(
+                            MapUiSettings(mapToolbarEnabled = false)
+                        )
+                    }
+                    val cameraPositionState = rememberCameraPositionState{
+                        position = CameraPosition.fromLatLngZoom(LatLng(60.16, 24.93), 30f)
                     }
 
+
+                    Box(modifier = Modifier.fillMaxSize()) {
+                            GoogleMap(
+                                properties = mapProperties,
+                                uiSettings = mapUiSettings,
+                                cameraPositionState = cameraPositionState
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            {
+                            Button(onClick = {
+                                val locationRequest = LocationRequest.create()
+                                    .setInterval(1000)
+                                    .setPriority(PRIORITY_HIGH_ACCURACY)
+                                fusedLocationClient.requestLocationUpdates(
+                                    locationRequest,
+                                    locationCallback, Looper.getMainLooper()
+                                )
+                            }) {
+                                Text("Start tracking")
+                            }
+                            Button(onClick = {
+                                fusedLocationClient.removeLocationUpdates(locationCallback)
+                            }) {
+                                Text("Stop tracking")
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-
-    private fun checkPermissions (){
-        if ( ContextCompat.checkSelfPermission(
-                this, android.Manifest.permission.ACCESS_FINE_LOCATION,
-
-            ) != PackageManager.PERMISSION_GRANTED)
-        {
-            ActivityCompat.requestPermissions(this,
-                arrayOf(
-                    android.Manifest.permission.ACCESS_FINE_LOCATION,
-                    android.Manifest.permission.ACCESS_COARSE_LOCATION,
-                    android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                ),
-                0)
-        }
-    }
-
 }
 
 @Composable
