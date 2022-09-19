@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-feature android:name="android.hardware.location.gps" />
     <uses-feature android:name="android.hardware.location.network" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -32,6 +32,8 @@
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
+            <meta-data android:name="com.google.android.geo.API_KEY"
+                android:value="${apiKey}" />
 
         </activity>
         <service

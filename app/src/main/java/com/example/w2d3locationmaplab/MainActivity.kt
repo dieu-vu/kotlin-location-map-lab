@@ -27,6 +27,15 @@ import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationRequest.create
 import com.google.android.gms.location.LocationResult.create
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.libraries.places.api.Places
+import com.google.maps.android.compose.CameraPositionState
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapUiSettings
+
 
 class MainActivity : ComponentActivity() {
     private lateinit var fusedLocationClient:
@@ -37,6 +46,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         checkPermissions()
         super.onCreate(savedInstanceState)
+        Places.initialize(this, BuildConfig.apiKey)
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(this)
         if (ActivityCompat.checkSelfPermission(this,
@@ -66,6 +76,11 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colors.background
                 ) {
                     Greeting("Android")
+//                    GoogleMap(
+//                        modifier = Modifier.fillMaxSize(),
+//                        uiSettings = MapUiSettings(zoomControlsEnabled = true),
+//                        cameraPositionState = CameraPositionState(CameraPosition(LatLng(37.42, -122.08),12f,0f,0f))
+//                    ){}
                     Column(verticalArrangement = Arrangement.Center){
                         Button(onClick = {
                             val locationRequest = LocationRequest.create()
